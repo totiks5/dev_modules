@@ -39,9 +39,12 @@ BYTE xchg_spi (
 	BYTE dat	/* Data to send */
 )
 {
-	SPIx_DR = dat;				/* Start an SPI transaction */
-	while ((SPIx_SR & 0x83) != 0x03) ;	/* Wait for end of the transaction */
-	return (BYTE)SPIx_DR;		/* Return received byte */
+//	SPIx_DR = dat;				/* Start an SPI transaction */
+//	while ((SPIx_SR & 0x83) != 0x03) ;	/* Wait for end of the transaction */
+//	return (BYTE)SPIx_DR;		/* Return received byte */
+	BYTE received_byte=0;
+	HAL_SPI_TransmitReceive(Get_SPI_HandleTypeDef(), &dat, &received_byte, sizeof(BYTE), 1000);
+	return received_byte;
 }
 
 
@@ -52,27 +55,29 @@ void rcvr_spi_multi (
 	UINT btr		/* Number of bytes to receive (even number) */
 )
 {
-	WORD d;
+//	WORD d;
+//
+//	SPIx_CR1 &= ~_BV(6);
+//	SPIx_CR1 |= (_BV(6) | _BV(11));	/* Put SPI into 16-bit mode */
+//
+//	SPIx_DR = 0xFFFF;		/* Start the first SPI transaction */
+//	btr -= 2;
+//	do {					/* Receive the data block into buffer */
+//		while ((SPIx_SR & 0x83) != 0x03) ;	/* Wait for end of the SPI transaction */
+//		d = SPIx_DR;						/* Get received word */
+//		SPIx_DR = 0xFFFF;					/* Start next transaction */
+//		buff[1] = d; buff[0] = d >> 8; 		/* Store received data */
+//		buff += 2;
+//	} while (btr -= 2);
+//	while ((SPIx_SR & 0x83) != 0x03) ;		/* Wait for end of the SPI transaction */
+//	d = SPIx_DR;							/* Get last word received */
+//	buff[1] = d; buff[0] = d >> 8;			/* Store it */
+//
+//	SPIx_CR1 &= ~(_BV(6) | _BV(11));	/* Put SPI into 8-bit mode */
+//	SPIx_CR1 |= _BV(6);
 
 
-	SPIx_CR1 &= ~_BV(6);
-	SPIx_CR1 |= (_BV(6) | _BV(11));	/* Put SPI into 16-bit mode */
-
-	SPIx_DR = 0xFFFF;		/* Start the first SPI transaction */
-	btr -= 2;
-	do {					/* Receive the data block into buffer */
-		while ((SPIx_SR & 0x83) != 0x03) ;	/* Wait for end of the SPI transaction */
-		d = SPIx_DR;						/* Get received word */
-		SPIx_DR = 0xFFFF;					/* Start next transaction */
-		buff[1] = d; buff[0] = d >> 8; 		/* Store received data */
-		buff += 2;
-	} while (btr -= 2);
-	while ((SPIx_SR & 0x83) != 0x03) ;		/* Wait for end of the SPI transaction */
-	d = SPIx_DR;							/* Get last word received */
-	buff[1] = d; buff[0] = d >> 8;			/* Store it */
-
-	SPIx_CR1 &= ~(_BV(6) | _BV(11));	/* Put SPI into 8-bit mode */
-	SPIx_CR1 |= _BV(6);
+	HAL_SPI_TransmitReceive(Get_SPI_HandleTypeDef(), buff, buff, btr*sizeof(uint16_t), 100);
 }
 
 
@@ -84,26 +89,27 @@ void xmit_spi_multi (
 	UINT btx			/* Number of bytes to send (even number) */
 )
 {
-	WORD d;
-
-
-	SPIx_CR1 &= ~_BV(6);
-	SPIx_CR1 |= (_BV(6) | _BV(11));		/* Put SPI into 16-bit mode */
-
-	d = buff[0] << 8 | buff[1]; buff += 2;
-	SPIx_DR = d;	/* Send the first word */
-	btx -= 2;
-	do {
-		d = buff[0] << 8 | buff[1]; buff += 2;	/* Word to send next */
-		while ((SPIx_SR & 0x83) != 0x03) ;	/* Wait for end of the SPI transaction */
-		SPIx_DR;							/* Discard received word */
-		SPIx_DR = d;						/* Start next transaction */
-	} while (btx -= 2);
-	while ((SPIx_SR & 0x83) != 0x03) ;	/* Wait for end of the SPI transaction */
-	SPIx_DR;							/* Discard received word */
-
-	SPIx_CR1 &= ~(_BV(6) | _BV(11));	/* Put SPI into 8-bit mode */
-	SPIx_CR1 |= _BV(6);
+//	WORD d;
+//
+//
+//	SPIx_CR1 &= ~_BV(6);
+//	SPIx_CR1 |= (_BV(6) | _BV(11));		/* Put SPI into 16-bit mode */
+//
+//	d = buff[0] << 8 | buff[1]; buff += 2;
+//	SPIx_DR = d;	/* Send the first word */
+//	btx -= 2;
+//	do {
+//		d = buff[0] << 8 | buff[1]; buff += 2;	/* Word to send next */
+//		while ((SPIx_SR & 0x83) != 0x03) ;	/* Wait for end of the SPI transaction */
+//		SPIx_DR;							/* Discard received word */
+//		SPIx_DR = d;						/* Start next transaction */
+//	} while (btx -= 2);
+//	while ((SPIx_SR & 0x83) != 0x03) ;	/* Wait for end of the SPI transaction */
+//	SPIx_DR;							/* Discard received word */
+//
+//	SPIx_CR1 &= ~(_BV(6) | _BV(11));	/* Put SPI into 8-bit mode */
+//	SPIx_CR1 |= _BV(6);
+	HAL_SPI_Transmit(Get_SPI_HandleTypeDef(), (uint8_t*)buff, btx*sizeof(BYTE), 100);
 }
 #endif
 
@@ -150,7 +156,7 @@ void deselect (void)
 /*-----------------------------------------------------------------------*/
 
 static
-int select (void)	/* 1:OK, 0:Timeout */
+int Select (void)	/* 1:OK, 0:Timeout */
 {
 	CS_LOW();		/* Set CS# low */
 	xchg_spi(0xFF);	/* Dummy clock (force DO enabled) */
@@ -241,7 +247,7 @@ BYTE send_cmd (		/* Return value: R1 resp (bit7==1:Failed to send) */
 	/* Select the card and wait for ready except to stop multiple block read */
 	if (cmd != CMD12) {
 		deselect();
-		if (!select()) return 0xFF;
+		if (!Select()) return 0xFF;
 	}
 
 	/* Send command packet */
@@ -454,7 +460,7 @@ DRESULT disk_ioctl (
 
 	switch (cmd) {
 	case CTRL_SYNC :		/* Wait for end of internal write process of the drive */
-		if (select()) res = RES_OK;
+		if (Select()) res = RES_OK;
 		break;
 
 	case GET_SECTOR_COUNT :	/* Get drive capacity in unit of sector (DWORD) */

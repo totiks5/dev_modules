@@ -12,8 +12,7 @@ extern "C" {
 #define _USE_WRITE	1	/* 1: Enable disk_write() function */
 #define _USE_IOCTL	1	/* 1: Enable disk_ioctl() fucntion */
 
-#include "ff.h"
-
+#include "main.h"
 
 /* Status of Disk Functions */
 typedef BYTE	DSTATUS;
@@ -36,6 +35,8 @@ typedef enum {
 DSTATUS disk_initialize (BYTE pdrv);
 DSTATUS disk_status (BYTE pdrv);
 DRESULT disk_read (BYTE pdrv, BYTE* buff, LBA_t sector, UINT count);
+void 	disk_timerproc (void);
+
 #if	_USE_WRITE
 DRESULT disk_write (BYTE pdrv, const BYTE* buff, LBA_t sector, UINT count);
 #endif
