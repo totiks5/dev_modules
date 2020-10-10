@@ -36,6 +36,8 @@ DSTATUS disk_initialize (BYTE pdrv);
 DSTATUS disk_status (BYTE pdrv);
 DRESULT disk_read (BYTE pdrv, BYTE* buff, LBA_t sector, UINT count);
 void 	disk_timerproc (void);
+uint16_t get_time();
+void 	set_delay(uint16_t var);
 
 #if	_USE_WRITE
 DRESULT disk_write (BYTE pdrv, const BYTE* buff, LBA_t sector, UINT count);

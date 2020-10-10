@@ -540,5 +540,12 @@ void disk_timerproc (void)
 	if (n) Timer2 = --n;
 
 }
+void set_delay(uint16_t var){
+	Timer1 = var;
+}
+
+uint16_t get_time(){
+	return Timer1;
+}
 
 
