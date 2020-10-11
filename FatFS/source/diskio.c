@@ -34,7 +34,7 @@ void init_spi (void)
 
 
 /* Exchange a byte */
-static
+
 BYTE xchg_spi (
 	BYTE dat	/* Data to send */
 )
@@ -43,7 +43,7 @@ BYTE xchg_spi (
 //	while ((SPIx_SR & 0x83) != 0x03) ;	/* Wait for end of the transaction */
 //	return (BYTE)SPIx_DR;		/* Return received byte */
 	BYTE received_byte=0;
-	HAL_SPI_TransmitReceive(Get_SPI_HandleTypeDef(), &dat, &received_byte, sizeof(BYTE), 1000);
+	HAL_SPI_TransmitReceive(Get_SPI_HandleTypeDef(), &dat, &received_byte, sizeof(dat), HAL_MAX_DELAY);
 	return received_byte;
 }
 
@@ -77,7 +77,46 @@ void rcvr_spi_multi (
 //	SPIx_CR1 |= _BV(6);
 
 
-	HAL_SPI_TransmitReceive(Get_SPI_HandleTypeDef(), buff, buff, btr*sizeof(uint16_t), 100);
+	Get_SPI_HandleTypeDef()->Init.DataSize = SPI_DATASIZE_16BIT;
+	HAL_SPI_Init( Get_SPI_HandleTypeDef() );
+
+	//HAL_SPI_TransmitReceive(Get_SPI_HandleTypeDef(), buff, buff, btr*sizeof(BYTE), HAL_MAX_DELAY);
+
+	uint8_t txallowed = 1U;
+
+	Get_SPI_HandleTypeDef()->pTxBuffPtr = buff;
+
+	Get_SPI_HandleTypeDef()->TxXferCount = btr/2;
+	Get_SPI_HandleTypeDef()->RxXferCount = Get_SPI_HandleTypeDef()->TxXferCount;
+
+	    while ((Get_SPI_HandleTypeDef()->TxXferCount > 0U) || (Get_SPI_HandleTypeDef()->RxXferCount > 0U))
+	    {
+	      /* Check TXE flag */
+	      if ((__HAL_SPI_GET_FLAG(Get_SPI_HandleTypeDef(), SPI_FLAG_TXE)) && (Get_SPI_HandleTypeDef()->TxXferCount > 0U) && (txallowed == 1U))
+	      {
+	    	  Get_SPI_HandleTypeDef()->Instance->DR = 0xFFFF;
+	    	  Get_SPI_HandleTypeDef()->pTxBuffPtr += sizeof(uint16_t);
+	    	  Get_SPI_HandleTypeDef()->TxXferCount--;
+	        /* Next Data is a reception (Rx). Tx not allowed */
+	        txallowed = 0U;
+
+	      }
+
+	      /* Check RXNE flag */
+	      if ((__HAL_SPI_GET_FLAG(Get_SPI_HandleTypeDef(), SPI_FLAG_RXNE)) && (Get_SPI_HandleTypeDef()->RxXferCount > 0U))
+	      {
+	        *((uint16_t *)Get_SPI_HandleTypeDef()->pRxBuffPtr) = (uint16_t)Get_SPI_HandleTypeDef()->Instance->DR;
+	        Get_SPI_HandleTypeDef()->pRxBuffPtr += sizeof(uint16_t);
+	        Get_SPI_HandleTypeDef()->RxXferCount--;
+	        /* Next Data is a Transmission (Tx). Tx is allowed */
+	        txallowed = 1U;
+	      }
+	    }
+
+
+	      Get_SPI_HandleTypeDef()->Init.DataSize = SPI_DATASIZE_8BIT;
+	      HAL_SPI_Init( Get_SPI_HandleTypeDef() );
+
 }
 
 
@@ -109,7 +148,7 @@ void xmit_spi_multi (
 //
 //	SPIx_CR1 &= ~(_BV(6) | _BV(11));	/* Put SPI into 8-bit mode */
 //	SPIx_CR1 |= _BV(6);
-	HAL_SPI_Transmit(Get_SPI_HandleTypeDef(), (uint8_t*)buff, btx*sizeof(BYTE), 100);
+	HAL_SPI_Transmit(Get_SPI_HandleTypeDef(), (uint8_t*)buff, btx*sizeof(BYTE), HAL_MAX_DELAY);
 }
 #endif
 

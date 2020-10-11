@@ -39,6 +39,9 @@ void 	disk_timerproc (void);
 uint16_t get_time();
 void 	set_delay(uint16_t var);
 
+BYTE xchg_spi (BYTE dat	);
+
+
 #if	_USE_WRITE
 DRESULT disk_write (BYTE pdrv, const BYTE* buff, LBA_t sector, UINT count);
 #endif
