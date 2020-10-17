@@ -39,7 +39,7 @@ void 	disk_timerproc (void);
 uint16_t get_time();
 void 	set_delay(uint16_t var);
 
-BYTE xchg_spi (BYTE dat	);
+
 
 
 #if	_USE_WRITE
