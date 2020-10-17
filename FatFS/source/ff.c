@@ -21,7 +21,7 @@
 
 #include "ff.h"			/* Declarations of FatFs API */
 
-#include "../../../PRJ_FatFS/diskio.h"		/* Declarations of device I/O functions */
+#include "diskio.h"		/* Declarations of device I/O functions */
 
 
 /*--------------------------------------------------------------------------
